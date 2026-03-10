@@ -1,0 +1,236 @@
+<!-- Toast -->
+@if (successMsg()) {
+  <div class="toast">
+    <div class="toast-icon">✓</div>
+    {{ successMsg() }}
+  </div>
+}
+
+<div class="store-page">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <div class="page-title">Locales</div>
+      <p class="page-sub">Gestiona los locales comerciales</p>
+    </div>
+    <div class="header-actions">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Buscar local, ciudad, empresa..."
+          [value]="searchTerm()"
+          (input)="searchTerm.set($any($event.target).value)" />
+      </div>
+      <button class="btn-primary" (click)="openCreate()">+ Nuevo Local</button>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content-scroll">
+
+    <!-- Stats bar -->
+    @if (stores().length > 0) {
+      <div class="stats-bar">
+        <div class="stat-pill">
+          <span class="stat-pill-value">{{ stores().length }}</span>
+          <span class="stat-pill-label">Total locales</span>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-pill-value">{{ filteredStores.length }}</span>
+          <span class="stat-pill-label">Mostrando</span>
+        </div>
+        <div class="stat-pill accent">
+          <span class="stat-pill-value">
+            {{ stores().length }}
+          </span>
+          <span class="stat-pill-label">Ciudades</span>
+        </div>
+      </div>
+    }
+
+    <!-- Empty state -->
+    @if (stores().length === 0) {
+      <div class="empty-state">
+        <div class="empty-art">📍</div>
+        <h3>Sin locales registrados</h3>
+        <p>Registra el primer local comercial asociándolo a una empresa existente.</p>
+        <button class="btn-primary btn-lg" (click)="openCreate()">+ Crear primer local</button>
+      </div>
+    }
+
+    <!-- Grid -->
+    @if (filteredStores.length > 0) {
+      <div class="stores-grid">
+        @for (store of filteredStores; track store.idStore) {
+          <div class="store-card animate-slide-in">
+            <div class="card-glow"></div>
+
+            <div class="store-card-head">
+              <div class="city-avatar">{{ getCityInitial(store.city) }}</div>
+              <div class="store-info">
+                <div class="store-name">{{ store.name }}</div>
+                <div class="store-company">
+                  <span class="tag-label">Empresa</span>
+                  <span class="tag-value">{{ store.companyName }}</span>
+                </div>
+              </div>
+              <button class="btn-icon-only" (click)="openEdit(store)" title="Editar">✎</button>
+            </div>
+
+            <div class="store-location">
+              <div class="location-row">
+                <span class="loc-icon">📍</span>
+                <span class="loc-text">{{ store.address }}</span>
+              </div>
+              <div class="location-row">
+                <span class="loc-icon">🏙</span>
+                <span class="loc-text">{{ store.city }}</span>
+              </div>
+            </div>
+
+            <div class="store-card-footer">
+              <div class="status-indicator">
+                <div class="dot active"></div> Activo
+              </div>
+              <div class="store-id-tag">
+                <span class="tag-label">ID</span>
+                <span class="tag-value">#{{ store.idStore }}</span>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- No results -->
+    @if (stores().length > 0 && filteredStores.length === 0) {
+      <div class="no-results">
+        <div style="font-size:2rem; opacity:.3;">🔍</div>
+        <p>Sin resultados para "<strong>{{ searchTerm() }}</strong>"</p>
+      </div>
+    }
+
+  </div>
+</div>
+
+<!-- ── Modal: Crear / Editar ── -->
+@if (showModal()) {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <div class="modal animate-scale-in" (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:1rem;">
+          <div class="modal-icon-hex">📍</div>
+          <div>
+            <div style="font-family:'Syne',sans-serif; font-weight:800; font-size:1.15rem; color:#e2e8f0;">
+              {{ editingId() !== null ? 'Editar Local' : 'Nuevo Local' }}
+            </div>
+            <div style="font-family:'DM Mono',monospace; font-size:.65rem; color:#7a8ba0; margin-top:.2rem;">
+              {{ editingId() !== null ? 'Actualiza los datos del local' : 'Asocia el local a una empresa' }}
+            </div>
+          </div>
+        </div>
+        <button class="modal-close-btn" (click)="closeModal()">✕</button>
+      </div>
+
+      <div style="padding: 1.75rem 2rem 2rem;">
+
+        @if (errorMsg()) {
+          <div class="alert-error-premium">
+            <div class="alert-icon">!</div>
+            {{ errorMsg() }}
+          </div>
+        }
+
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="premium-form">
+
+          <div class="form-section-label">Datos del local</div>
+
+          <!-- Nombre -->
+          <div class="field">
+            <label class="field-label">Nombre del local</label>
+            <div class="input-group-premium">
+              <input type="text" formControlName="name"
+                placeholder="Ej: Local Miraflores Centro"
+                [class.invalid]="isFieldInvalid('name')" />
+              <div class="input-focus-line"></div>
+            </div>
+            @if (isFieldInvalid('name')) {
+              <div class="field-error-msg">
+                @if (form.get('name')!.hasError('required')) { El nombre es requerido. }
+                @else if (form.get('name')!.hasError('minlength')) { Mínimo 2 caracteres. }
+              </div>
+            }
+          </div>
+
+          <!-- Dirección -->
+          <div class="field">
+            <label class="field-label">Dirección</label>
+            <div class="input-group-premium">
+              <input type="text" formControlName="address"
+                placeholder="Ej: Av. Larco 345, Piso 2"
+                [class.invalid]="isFieldInvalid('address')" />
+              <div class="input-focus-line"></div>
+            </div>
+            @if (isFieldInvalid('address')) {
+              <div class="field-error-msg">
+                @if (form.get('address')!.hasError('required')) { La dirección es requerida. }
+                @else if (form.get('address')!.hasError('minlength')) { Mínimo 5 caracteres. }
+              </div>
+            }
+          </div>
+
+          <!-- Ciudad (select) -->
+          <div class="field">
+            <label class="field-label">Ciudad</label>
+            <div class="input-group-premium">
+              <select formControlName="city" [class.invalid]="isFieldInvalid('city')"
+                style="width:100%; background:#0d1117; border:1px solid #2a3448;
+                  border-radius:10px; padding:.85rem 1.15rem; color:#e2e8f0;
+                  font-size:.95rem; font-family:'DM Sans',sans-serif;
+                  outline:none; appearance:none; cursor:pointer;
+                  transition: border-color .3s, box-shadow .3s;">
+                <option value="" disabled selected>Selecciona una ciudad</option>
+                @for (city of cities; track city) {
+                  <option [value]="city">{{ city }}</option>
+                }
+              </select>
+              <div class="input-focus-line"></div>
+            </div>
+            @if (isFieldInvalid('city')) {
+              <div class="field-error-msg">Selecciona una ciudad.</div>
+            }
+          </div>
+
+          <div class="form-section-label" style="margin-top:1.5rem;">Empresa asociada</div>
+
+          <!-- Empresa -->
+          <div class="field">
+            <label class="field-label">Nombre de la empresa</label>
+            <div class="input-group-premium">
+              <input type="text" formControlName="companyName"
+                placeholder="Ej: Retail Corp S.A.C."
+                [class.invalid]="isFieldInvalid('companyName')" />
+              <div class="input-focus-line"></div>
+            </div>
+            @if (isFieldInvalid('companyName')) {
+              <div class="field-error-msg">El nombre de la empresa es requerido.</div>
+            }
+          </div>
+
+          <div class="modal-footer-premium">
+            <button type="button" class="btn-cancel" (click)="closeModal()">Cancelar</button>
+            <button type="submit" class="btn-submit-premium" [disabled]="isSaving()">
+              @if (isSaving()) {
+                <div class="loader-dots"><span></span><span></span><span></span></div>
+              } @else {
+                {{ editingId() !== null ? 'Actualizar' : 'Crear local' }}
+              }
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,43 @@
+<div class="shell">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-dot"></div>
+      OSS Monitor
+    </div>
+
+    @for (section of sections; track section) {
+      <nav class="nav-section">
+        <div class="nav-section-label">{{ section }}</div>
+        @for (item of itemsBySection(section); track item.route) {
+          <a class="nav-item" [routerLink]="item.route"
+            [class.active]="isActive(item.route)">
+            <span class="nav-icon">{{ item.icon }}</span>
+            {{ item.label }}
+            @if (item.badge) {
+              <span class="nav-badge">{{ item.badge }}</span>
+            }
+          </a>
+        }
+      </nav>
+    }
+
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="user-avatar">{{ getUserInitials() }}</div>
+        <div class="user-info">
+          <div class="user-name">{{ user?.email }}</div>
+          <div class="user-role">Admin</div>
+        </div>
+        <button class="btn-logout" (click)="logout()" title="Cerrar sesión">⎋</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Page area ── -->
+  <div class="page-area">
+    <router-outlet />
+  </div>
+
+</div>

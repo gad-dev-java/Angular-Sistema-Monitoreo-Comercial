@@ -1,0 +1,262 @@
+<!-- Toast -->
+@if (successMsg()) {
+  <div class="toast"><div class="toast-icon">✓</div>{{ successMsg() }}</div>
+}
+
+<div class="obj-page">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <div class="page-title">Objetivos de Venta</div>
+      <p class="page-sub">Define metas mensuales por local</p>
+    </div>
+    <div class="header-actions">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Buscar por local..."
+          [value]="searchTerm()"
+          (input)="searchTerm.set($any($event.target).value)" />
+      </div>
+      <button class="btn-primary" (click)="openCreate()">+ Nuevo Objetivo</button>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content-scroll">
+
+    <!-- Filter pills -->
+    <div class="filter-bar">
+      <button class="filter-pill" [class.active]="filterPeriod() === 'ALL'"
+        (click)="filterPeriod.set('ALL')">Todos</button>
+      @for (p of periodTypes; track p.value) {
+        <button class="filter-pill" [class.active]="filterPeriod() === p.value"
+          (click)="filterPeriod.set(p.value)">{{ p.label }}</button>
+      }
+    </div>
+
+    <!-- Stats -->
+    @if (objectives().length > 0) {
+      <div class="stats-bar">
+        <div class="stat-pill">
+          <span class="stat-pill-value">{{ objectives().length }}</span>
+          <span class="stat-pill-label">Total objetivos</span>
+        </div>
+        <div class="stat-pill accent">
+          <span class="stat-pill-value">{{ filtered().length }}</span>
+          <span class="stat-pill-label">Filtrados</span>
+        </div>
+      </div>
+    }
+
+    <!-- Empty state -->
+    @if (objectives().length === 0) {
+      <div class="empty-state">
+        <div class="empty-art">🎯</div>
+        <h3>Sin objetivos registrados</h3>
+        <p>Crea el primer objetivo de ventas para comenzar el seguimiento de metas comerciales.</p>
+        <button class="btn-primary btn-lg" (click)="openCreate()">+ Crear primer objetivo</button>
+      </div>
+    }
+
+    <!-- No results -->
+    @if (objectives().length > 0 && filtered().length === 0) {
+      <div class="no-results">
+        <div style="font-size:2rem;opacity:.3">🔍</div>
+        <p>Sin resultados para los filtros aplicados.</p>
+      </div>
+    }
+
+    <!-- Grid -->
+    @if (filtered().length > 0) {
+      <div class="objectives-grid">
+        @for (obj of filtered(); track obj.idObjective) {
+          <div class="obj-card animate-slide-in">
+            <div class="card-glow"></div>
+
+            <!-- Card head -->
+            <div class="obj-card-head">
+              <div class="obj-avatar">🎯</div>
+              <div class="obj-info">
+                <div class="obj-store">{{ obj.nameStore }}</div>
+                <span class="period-chip" [class]="getPeriodClass(obj.periodType)">
+                  {{ getPeriodLabel(obj.periodType) }}
+                </span>
+              </div>
+              <div class="obj-amount">{{ formatAmount(obj.targetAmount) }}</div>
+            </div>
+
+            <!-- Dates -->
+            <div class="obj-dates">
+              <div class="date-item">
+                <span class="date-label">Inicio</span>
+                <span class="date-value">{{ formatDate(obj.startDate) }}</span>
+              </div>
+              <div class="date-divider">→</div>
+              <div class="date-item">
+                <span class="date-label">Fin</span>
+                <span class="date-value">{{ formatDate(obj.endDate) }}</span>
+              </div>
+            </div>
+
+            <!-- Days left -->
+            <div class="obj-card-footer">
+              @if (getDaysLeft(obj.endDate) < 0) {
+                <div class="days-badge expired">Vencido</div>
+              } @else if (getDaysLeft(obj.endDate) === 0) {
+                <div class="days-badge urgent">Vence hoy</div>
+              } @else {
+                <div class="days-badge" [class]="getDaysLeftClass(getDaysLeft(obj.endDate))">
+                  {{ getDaysLeft(obj.endDate) }} días restantes
+                </div>
+              }
+              <div class="obj-id">
+                <span class="tag-label">ID</span>
+                <span class="tag-value">#{{ obj.idObjective }}</span>
+              </div>
+            </div>
+
+          </div>
+        }
+      </div>
+    }
+
+  </div>
+</div>
+
+<!-- ── Modal: Crear objetivo ── -->
+@if (showModal()) {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <div class="modal animate-scale-in" (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <div style="display:flex;align-items:center;gap:1rem;">
+          <div class="modal-icon-hex">🎯</div>
+          <div>
+            <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.15rem;color:#e2e8f0;">
+              Nuevo Objetivo
+            </div>
+            <div style="font-family:'DM Mono',monospace;font-size:.65rem;color:#7a8ba0;margin-top:.2rem;">
+              Define la meta de ventas para un local
+            </div>
+          </div>
+        </div>
+        <button class="modal-close-btn" (click)="closeModal()">✕</button>
+      </div>
+
+      <div style="padding:1.75rem 2rem 2rem;">
+
+        @if (errorMsg()) {
+          <div class="alert-error-premium">
+            <div class="alert-icon">!</div>{{ errorMsg() }}
+          </div>
+        }
+
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="premium-form">
+
+          <div class="form-section-label">Local y meta</div>
+
+          <!-- Local -->
+          <div class="field">
+            <label class="field-label">Nombre del local</label>
+            <div class="input-group-premium">
+              <input type="text" formControlName="nameStore"
+                placeholder="Ej: Local Miraflores"
+                [class.invalid]="isFieldInvalid('nameStore')" />
+              <div class="input-focus-line"></div>
+            </div>
+            @if (isFieldInvalid('nameStore')) {
+              <div class="field-error-msg">El nombre del local es requerido.</div>
+            }
+          </div>
+
+          <!-- Monto -->
+          <div class="field">
+            <label class="field-label">Meta de ventas (S/)</label>
+            <div class="input-group-premium">
+              <input type="number" formControlName="targetAmount"
+                placeholder="Ej: 50000"
+                min="0.01" max="99999999.99" step="0.01"
+                [class.invalid]="isFieldInvalid('targetAmount')" />
+              <div class="input-focus-line"></div>
+            </div>
+            @if (isFieldInvalid('targetAmount')) {
+              <div class="field-error-msg">
+                @if (form.get('targetAmount')!.hasError('required')) { El monto es requerido. }
+                @else if (form.get('targetAmount')!.hasError('min')) { El mínimo es S/ 0.01. }
+                @else if (form.get('targetAmount')!.hasError('max')) { El máximo es S/ 99,999,999.99. }
+              </div>
+            }
+          </div>
+
+          <!-- Tipo de periodo -->
+          <div class="field">
+            <label class="field-label">Tipo de periodo</label>
+            <div class="input-group-premium">
+              <select formControlName="periodType"
+                [class.invalid]="isFieldInvalid('periodType')">
+                <option value="" disabled>Selecciona un periodo</option>
+                @for (p of periodTypes; track p.value) {
+                  <option [value]="p.value">{{ p.label }}</option>
+                }
+              </select>
+              <div class="input-focus-line"></div>
+            </div>
+            @if (isFieldInvalid('periodType')) {
+              <div class="field-error-msg">Selecciona un tipo de periodo.</div>
+            }
+          </div>
+
+          <div class="form-section-label" style="margin-top:1.5rem;">Período de vigencia</div>
+
+          <!-- Fechas en grid -->
+          <div class="dates-grid">
+            <div class="field">
+              <label class="field-label">Fecha de inicio</label>
+              <div class="input-group-premium">
+                <input type="date" formControlName="startDate"
+                  [min]="today"
+                  [class.invalid]="isFieldInvalid('startDate')" />
+                <div class="input-focus-line"></div>
+              </div>
+              @if (isFieldInvalid('startDate')) {
+                <div class="field-error-msg">La fecha de inicio es requerida.</div>
+              }
+            </div>
+            <div class="field">
+              <label class="field-label">Fecha de fin</label>
+              <div class="input-group-premium">
+                <input type="date" formControlName="endDate"
+                  [min]="today"
+                  [class.invalid]="isFieldInvalid('endDate')" />
+                <div class="input-focus-line"></div>
+              </div>
+              @if (isFieldInvalid('endDate')) {
+                <div class="field-error-msg">La fecha de fin es requerida.</div>
+              }
+            </div>
+          </div>
+
+          <!-- Error fechas cruzadas -->
+          @if (form.hasError('endBeforeStart') && form.get('endDate')?.touched) {
+            <div class="field-error-msg" style="margin-top:-.5rem;margin-bottom:1rem;">
+              La fecha de fin debe ser posterior a la de inicio.
+            </div>
+          }
+
+          <div class="modal-footer-premium">
+            <button type="button" class="btn-cancel" (click)="closeModal()">Cancelar</button>
+            <button type="submit" class="btn-submit-premium" [disabled]="isSaving()">
+              @if (isSaving()) {
+                <div class="loader-dots"><span></span><span></span><span></span></div>
+              } @else {
+                Crear objetivo
+              }
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+}

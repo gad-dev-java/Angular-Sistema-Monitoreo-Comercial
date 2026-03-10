@@ -1,0 +1,116 @@
+<!-- Topbar -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-title">Dashboard</div>
+    <div class="topbar-sub">MARZO 2026 · SEMANA 10</div>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn-ghost">Exportar CSV</button>
+    <button class="btn-primary">+ Registrar Venta</button>
+    <div class="notif-btn">🔔<div class="notif-dot"></div></div>
+  </div>
+</div>
+
+<!-- Content -->
+<div class="main-content">
+
+  <div class="kpi-grid">
+    @for (kpi of kpis; track kpi.label) {
+      <div class="kpi-card" [class]="'c-' + kpi.accent">
+        <div class="kpi-label">{{ kpi.label }}</div>
+        <div class="kpi-value">{{ kpi.value }}</div>
+        <div class="kpi-delta" [class]="kpi.trend">{{ kpi.delta }}</div>
+      </div>
+    }
+  </div>
+
+  <div class="mid-grid">
+
+    <div class="section-card">
+      <div class="section-head">
+        <h3>Cumplimiento por Local</h3>
+        <span class="section-tag">Esta semana</span>
+      </div>
+      <div class="chart-area">
+        <div class="bar-chart">
+          @for (bar of bars; track bar.label) {
+            <div class="bar-group">
+              <div class="bars">
+                <div class="bar bar-meta"   [style.height.px]="bar.metaH"></div>
+                <div class="bar bar-actual" [style.height.px]="bar.actualH"></div>
+              </div>
+              <div class="bar-label">{{ bar.label }}</div>
+            </div>
+          }
+        </div>
+      </div>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot meta-dot"></div> Meta</div>
+        <div class="legend-item"><div class="legend-dot actual-dot"></div> Ventas reales</div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-head">
+        <h3>Alertas Recientes</h3>
+        <span class="section-tag">{{ alerts.length }} activas</span>
+      </div>
+      <div class="alert-list">
+        @for (alert of alerts; track alert.title) {
+          <div class="alert-item">
+            <div class="alert-pip" [class]="'pip-' + alert.type"></div>
+            <div class="alert-body">
+              <div class="alert-title">{{ alert.title }}</div>
+              <div class="alert-time">{{ alert.time }}</div>
+            </div>
+            <span class="alert-badge" [class]="'badge-' + alert.type">
+              {{ alert.type.toUpperCase() }}
+            </span>
+          </div>
+        }
+      </div>
+    </div>
+
+  </div>
+
+  <div class="section-card">
+    <div class="section-head">
+      <h3>Resumen de Locales</h3>
+      <span class="section-tag">PC = ventas / meta × 100</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Local</th><th>Meta Mensual</th><th>Ventas Acum.</th>
+            <th>PC %</th><th>PT %</th><th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (store of stores; track store.name) {
+            <tr>
+              <td class="td-name">{{ store.name }}</td>
+              <td class="td-mono">{{ store.meta }}</td>
+              <td class="td-mono">{{ store.ventas }}</td>
+              <td>
+                <div class="progress-cell">
+                  <div class="progress-bar">
+                    <div class="progress-fill" [class]="getProgressClass(store.pc)" [style.width.%]="store.pc"></div>
+                  </div>
+                  <span class="progress-pct" [class]="getProgressClass(store.pc)">{{ store.pc }}%</span>
+                </div>
+              </td>
+              <td class="td-mono">{{ store.pt }}%</td>
+              <td>
+                <span class="status-chip" [class]="'chip-' + store.status">
+                  {{ getStatusLabel(store.status) }}
+                </span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>

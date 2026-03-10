@@ -1,0 +1,205 @@
+<!-- Toast -->
+@if (successMsg()) {
+  <div class="toast"><div class="toast-icon">✓</div>{{ successMsg() }}</div>
+}
+
+<div class="sales-page">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <div class="page-title">Ventas</div>
+      <p class="page-sub">Registra y consulta ventas por local</p>
+    </div>
+    <div class="header-actions">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Buscar por local o descripción..."
+          [value]="searchTerm()"
+          (input)="searchTerm.set($any($event.target).value)" />
+      </div>
+      <button class="btn-primary" (click)="openCreate()">+ Registrar Venta</button>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content-scroll">
+
+    <!-- KPI Strip -->
+    @if (sales().length > 0) {
+      <div class="kpi-strip">
+        <div class="kpi-tile">
+          <div class="kpi-tile-label">Total ventas</div>
+          <div class="kpi-tile-value">{{ sales().length }}</div>
+        </div>
+        <div class="kpi-tile accent">
+          <div class="kpi-tile-label">Monto acumulado</div>
+          <div class="kpi-tile-value">{{ formatAmount(totalAmount()) }}</div>
+        </div>
+        @if (searchTerm()) {
+          <div class="kpi-tile">
+            <div class="kpi-tile-label">Filtrado</div>
+            <div class="kpi-tile-value">{{ formatAmount(totalFiltered()) }}</div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Empty state -->
+    @if (sales().length === 0) {
+      <div class="empty-state">
+        <div class="empty-art">💰</div>
+        <h3>Sin ventas registradas</h3>
+        <p>Registra la primera venta para comenzar el seguimiento de ingresos por local.</p>
+        <button class="btn-primary btn-lg" (click)="openCreate()">+ Registrar primera venta</button>
+      </div>
+    }
+
+    <!-- No results -->
+    @if (sales().length > 0 && filtered().length === 0) {
+      <div class="no-results">
+        <div style="font-size:2rem;opacity:.3">🔍</div>
+        <p>Sin resultados para "<strong>{{ searchTerm() }}</strong>"</p>
+      </div>
+    }
+
+    <!-- Sales list -->
+    @if (filtered().length > 0) {
+      <div class="sales-list">
+        @for (sale of filtered(); track sale.idSale; let i = $index) {
+          <div class="sale-row animate-slide-in" [style.animation-delay]="(i * 0.04) + 's'">
+
+            <div class="sale-index">{{ i + 1 }}</div>
+
+            <div class="store-avatar">{{ getStoreInitial(sale.storeName) }}</div>
+
+            <div class="sale-main">
+              <div class="sale-store">{{ sale.storeName }}</div>
+              <div class="sale-desc">{{ sale.description }}</div>
+            </div>
+
+            <div class="sale-meta">
+              <div class="sale-date">{{ formatDate(sale.createdAt) }}</div>
+              <div class="sale-id">
+                <span class="tag-label">ID</span>
+                <span class="tag-value">#{{ sale.idSale }}</span>
+              </div>
+            </div>
+
+            <div class="sale-amount">{{ formatAmount(sale.amount) }}</div>
+
+          </div>
+        }
+
+        <!-- Total row -->
+        <div class="total-row">
+          <span class="total-label">Total acumulado</span>
+          <span class="total-value">{{ formatAmount(totalFiltered()) }}</span>
+        </div>
+      </div>
+    }
+
+  </div>
+</div>
+
+<!-- ── Modal: Registrar venta ── -->
+@if (showModal()) {
+  <div class="modal-backdrop" (click)="closeModal()">
+    <div class="modal animate-scale-in" (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <div style="display:flex;align-items:center;gap:1rem;">
+          <div class="modal-icon-hex">💰</div>
+          <div>
+            <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.15rem;color:#e2e8f0;">
+              Registrar Venta
+            </div>
+            <div style="font-family:'DM Mono',monospace;font-size:.65rem;color:#7a8ba0;margin-top:.2rem;">
+              Asocia la venta a un local existente
+            </div>
+          </div>
+        </div>
+        <button class="modal-close-btn" (click)="closeModal()">✕</button>
+      </div>
+
+      <div style="padding:1.75rem 2rem 2rem;">
+
+        @if (errorMsg()) {
+          <div class="alert-error-premium">
+            <div class="alert-icon">!</div>{{ errorMsg() }}
+          </div>
+        }
+
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="premium-form">
+
+          <div class="form-section-label">Datos de la venta</div>
+
+          <!-- Local -->
+          <div class="field">
+            <label class="field-label">Nombre del local</label>
+            <div class="input-group-premium">
+              <input type="text" formControlName="storeName"
+                placeholder="Ej: Local Miraflores"
+                [class.invalid]="isFieldInvalid('storeName')" />
+              <div class="input-focus-line"></div>
+            </div>
+            @if (isFieldInvalid('storeName')) {
+              <div class="field-error-msg">El nombre del local es requerido.</div>
+            }
+          </div>
+
+          <!-- Monto -->
+          <div class="field">
+            <label class="field-label">Monto de venta (S/)</label>
+            <div class="input-group-premium amount-input-wrap">
+              <span class="amount-prefix">S/</span>
+              <input type="number" formControlName="amount"
+                placeholder="0.00"
+                min="0.01" max="99999999.99" step="0.01"
+                style="padding-left:2.5rem;"
+                [class.invalid]="isFieldInvalid('amount')" />
+              <div class="input-focus-line"></div>
+            </div>
+            @if (isFieldInvalid('amount')) {
+              <div class="field-error-msg">
+                @if (form.get('amount')!.hasError('required')) { El monto es requerido. }
+                @else if (form.get('amount')!.hasError('min')) { El mínimo es S/ 0.01. }
+                @else if (form.get('amount')!.hasError('max')) { El máximo es S/ 99,999,999.99. }
+              </div>
+            }
+          </div>
+
+          <!-- Descripción -->
+          <div class="field">
+            <label class="field-label">Descripción</label>
+            <div class="input-group-premium">
+              <textarea formControlName="description"
+                placeholder="Ej: Venta de productos categoría A — turno mañana"
+                rows="3"
+                [class.invalid]="isFieldInvalid('description')"></textarea>
+              <div class="input-focus-line"></div>
+            </div>
+            @if (isFieldInvalid('description')) {
+              <div class="field-error-msg">
+                @if (form.get('description')!.hasError('required')) { La descripción es requerida. }
+                @else if (form.get('description')!.hasError('minlength')) { Mínimo 3 caracteres. }
+              </div>
+            }
+          </div>
+
+          <div class="modal-footer-premium">
+            <button type="button" class="btn-cancel" (click)="closeModal()">Cancelar</button>
+            <button type="submit" class="btn-submit-premium" [disabled]="isSaving()">
+              @if (isSaving()) {
+                <div class="loader-dots"><span></span><span></span><span></span></div>
+              } @else {
+                Registrar venta
+              }
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+}
