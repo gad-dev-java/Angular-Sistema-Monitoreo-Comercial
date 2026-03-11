@@ -36,7 +36,7 @@
           <span class="stat-pill-label">Total locales</span>
         </div>
         <div class="stat-pill">
-          <span class="stat-pill-value">{{ filteredStores.length }}</span>
+          <span class="stat-pill-value">{{ filteredStores().length }}</span>
           <span class="stat-pill-label">Mostrando</span>
         </div>
         <div class="stat-pill accent">
@@ -59,9 +59,9 @@
     }
 
     <!-- Grid -->
-    @if (filteredStores.length > 0) {
+    @if (filteredStores().length > 0) {
       <div class="stores-grid">
-        @for (store of filteredStores; track store.idStore) {
+        @for (store of filteredStores(); track store.idStore) {
           <div class="store-card animate-slide-in">
             <div class="card-glow"></div>
 
@@ -103,7 +103,7 @@
     }
 
     <!-- No results -->
-    @if (stores().length > 0 && filteredStores.length === 0) {
+    @if (stores().length > 0 && filteredStores().length === 0) {
       <div class="no-results">
         <div style="font-size:2rem; opacity:.3;">🔍</div>
         <p>Sin resultados para "<strong>{{ searchTerm() }}</strong>"</p>

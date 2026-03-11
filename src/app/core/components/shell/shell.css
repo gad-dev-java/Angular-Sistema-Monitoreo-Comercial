@@ -160,3 +160,30 @@
   height: 100vh;
   background: #0d1117;
 }
+
+/* ── Locked nav items */
+.nav-item--locked {
+  cursor: not-allowed;
+  opacity: .4;
+  position: relative;
+}
+
+.nav-item--locked:hover {
+  background: rgba(239,68,68,.05);
+  color: #7a8ba0;
+}
+
+.nav-icon--locked {
+  filter: grayscale(1);
+}
+
+.nav-label--locked {
+  text-decoration: line-through;
+  text-decoration-color: rgba(255,255,255,.2);
+}
+
+.lock-icon {
+  margin-left: auto;
+  font-size: .7rem;
+  opacity: .6;
+}

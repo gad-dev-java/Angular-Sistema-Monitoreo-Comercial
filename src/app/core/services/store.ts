@@ -12,6 +12,10 @@ export class StoreService {
 private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiUrl}/api/stores`;
 
+  getByCompany(companyId: number): Observable<DataResponse<StoreDto[]>> {
+    return this.http.get<DataResponse<StoreDto[]>>(`${this.base}/company/${companyId}`);
+  }
+
   create(request: CreateStoreRequest): Observable<DataResponse<StoreDto>> {
     return this.http.post<DataResponse<StoreDto>>(this.base, request);
   }

@@ -17,7 +17,9 @@
     <div class="header-actions">
       <div class="search-box">
         <span class="search-icon">🔍</span>
-        <input type="text" placeholder="Buscar empresa..." />
+        <input type="text" placeholder="Buscar empresa..."
+          [value]="searchTerm()"
+          (input)="searchTerm.set($any($event.target).value)" />
       </div>
       <button class="btn-primary" (click)="openCreate()">+ Nueva Empresa</button>
     </div>

@@ -1,0 +1,152 @@
+<!-- Toast -->
+@if (successMsg()) {
+  <div class="toast"><div class="toast-icon">✓</div>{{ successMsg() }}</div>
+}
+
+<div class="alerts-page">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <div class="page-title">Alertas</div>
+      <p class="page-sub">Notificaciones sin leer por local</p>
+    </div>
+    @if (notifications().length > 0) {
+      <button class="btn-ghost-sm" (click)="markAllAsRead()">
+        ✓ Marcar todas como leídas
+      </button>
+    }
+  </div>
+
+  <div class="content-scroll">
+
+    <!-- Search by store -->
+    <div class="store-search-card">
+      <div class="search-card-label">Consultar alertas por local</div>
+      <div class="search-row">
+        <div class="input-group-premium store-input">
+          <input type="number" placeholder="ID del local  (ej: 1)"
+            [value]="storeIdInput()"
+            (input)="storeIdInput.set($any($event.target).value)"
+            (keydown.enter)="loadByStore()"
+            min="1" />
+          <div class="input-focus-line"></div>
+        </div>
+        <button class="btn-primary" (click)="loadByStore()" [disabled]="isLoading()">
+          @if (isLoading()) {
+            <div class="loader-dots"><span></span><span></span><span></span></div>
+          } @else {
+            Consultar
+          }
+        </button>
+      </div>
+      @if (errorMsg()) {
+        <div class="inline-error">⚠ {{ errorMsg() }}</div>
+      }
+    </div>
+
+    <!-- Stats chips (only when loaded) -->
+    @if (notifications().length > 0) {
+      <div class="stats-strip">
+        <div class="stat-chip total">
+          <span class="stat-num">{{ notifications().length }}</span>
+          <span class="stat-lbl">Total</span>
+        </div>
+        <div class="stat-chip critical" (click)="filterType.set('CRITICAL')"
+          [class.active]="filterType() === 'CRITICAL'">
+          <span class="stat-num">{{ criticalCount() }}</span>
+          <span class="stat-lbl">Críticas</span>
+        </div>
+        <div class="stat-chip warning" (click)="filterType.set('WARNING')"
+          [class.active]="filterType() === 'WARNING'">
+          <span class="stat-num">{{ warningCount() }}</span>
+          <span class="stat-lbl">Advertencias</span>
+        </div>
+        <div class="stat-chip ok" (click)="filterType.set('OK')"
+          [class.active]="filterType() === 'OK'">
+          <span class="stat-num">{{ okCount() }}</span>
+          <span class="stat-lbl">OK</span>
+        </div>
+        <button class="filter-clear" (click)="filterType.set('ALL')"
+          [class.hidden]="filterType() === 'ALL'">
+          ✕ Limpiar filtro
+        </button>
+      </div>
+    }
+
+    <!-- Empty initial state -->
+    @if (notifications().length === 0 && !isLoading()) {
+      <div class="empty-state">
+        <div class="empty-art">🔔</div>
+        <h3>Sin alertas cargadas</h3>
+        <p>Ingresa el ID de un local y pulsa <strong>Consultar</strong> para ver sus alertas activas.</p>
+      </div>
+    }
+
+    <!-- Notifications list -->
+    @if (filtered().length > 0) {
+      <div class="notif-list">
+        @for (notif of filtered(); track notif.idNotification; let i = $index) {
+          <div class="notif-row animate-slide-in"
+            [class.is-read]="notif.read"
+            [style.animation-delay]="(i * 0.04) + 's'">
+
+            <!-- Severity pip -->
+            <div class="severity-pip" [class]="getPipClass(notif.type)">
+              @if (notif.type === 'CRITICAL') { ● }
+              @else if (notif.type === 'WARNING') { ◆ }
+              @else { ✓ }
+            </div>
+
+            <!-- Content -->
+            <div class="notif-content">
+              <div class="notif-message" [class.read-text]="notif.read">
+                {{ notif.message }}
+              </div>
+              <div class="notif-meta">
+                @if (notif.storeName) {
+                  <span class="meta-store">📍 {{ notif.storeName }}</span>
+                }
+                <span class="meta-date">{{ formatDate(notif.createdAt) }}</span>
+                <span class="meta-id">
+                  <span class="tag-label">ID</span>
+                  <span class="tag-value">#{{ notif.idNotification }}</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Type badge -->
+            <span class="type-badge" [class]="getTypeClass(notif.type)">
+              {{ notif.type }}
+            </span>
+
+            <!-- Action -->
+            @if (!notif.read) {
+              <button class="btn-read"
+                (click)="markAsRead(notif)"
+                [disabled]="isMarkingId() === notif.idNotification">
+                @if (isMarkingId() === notif.idNotification) {
+                  <div class="loader-dots small"><span></span><span></span><span></span></div>
+                } @else {
+                  Marcar leída
+                }
+              </button>
+            } @else {
+              <div class="read-badge">✓ Leída</div>
+            }
+
+          </div>
+        }
+      </div>
+    }
+
+    <!-- No results after filter -->
+    @if (notifications().length > 0 && filtered().length === 0) {
+      <div class="no-results">
+        <div style="font-size:2rem;opacity:.3">🔍</div>
+        <p>Sin alertas del tipo <strong>{{ filterType() }}</strong> para este local.</p>
+      </div>
+    }
+
+  </div>
+</div>

@@ -10,15 +10,24 @@ export interface DataResponse<T> {
   timestamp: string;
 }
 
-
 export interface AuthResponse {
   token: string;
 }
 
-
 export interface AuthUser {
+  sub: string;       // email
   email: string;
+  name: string;
+  idCompany: number;
   roles: string[];
-  exp: number;
   iat: number;
+  exp: number;
 }
+
+
+
+
+
+
+
+

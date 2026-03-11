@@ -1,0 +1,159 @@
+<div class="kpi-page">
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">KPI · Monitoreo</div>
+      <p class="page-sub">Cumplimiento por local en tiempo real</p>
+    </div>
+    @if (kpis().length > 0) {
+      <button class="btn-ghost" (click)="refreshAll()">↻ Actualizar</button>
+    }
+  </div>
+
+  <div class="content-scroll">
+
+    <!-- Loading stores -->
+    @if (isLoadingStores()) {
+      <div class="loading-row"><div class="spinner"></div> Cargando locales...</div>
+    }
+
+    <!-- Error -->
+    @if (errorMsg()) {
+      <div class="inline-error">⚠ {{ errorMsg() }}</div>
+    }
+
+    <!-- Summary strip -->
+    @if (kpis().length > 0) {
+      <div class="summary-strip">
+        <div class="summary-tile">
+          <div class="summary-label">Locales</div>
+          <div class="summary-value">{{ kpis().length }}</div>
+        </div>
+        <div class="summary-tile accent-blue">
+          <div class="summary-label">PC Promedio</div>
+          <div class="summary-value">{{ fmt(avgPc()) }}</div>
+        </div>
+        <div class="summary-tile accent-muted">
+          <div class="summary-label">PT Promedio</div>
+          <div class="summary-value">{{ fmt(avgPt()) }}</div>
+        </div>
+        <div class="summary-tile accent-green">
+          <div class="summary-label">Cumpliendo</div>
+          <div class="summary-value">{{ okCount() }}</div>
+        </div>
+        <div class="summary-tile accent-red">
+          <div class="summary-label">Críticos</div>
+          <div class="summary-value">{{ criticalCount() }}</div>
+        </div>
+      </div>
+    }
+
+    <!-- Empty -->
+    @if (!isLoadingStores() && stores().length === 0) {
+      <div class="empty-state">
+        <div class="empty-art">📊</div>
+        <h3>Sin locales registrados</h3>
+        <p>Crea locales en la sección <strong>Locales</strong> para ver sus KPIs.</p>
+      </div>
+    }
+
+    <!-- KPI Cards -->
+    @if (kpis().length > 0) {
+      <div class="kpi-grid">
+        @for (k of kpis(); track k.storeId; let i = $index) {
+          <div class="kpi-card animate-in" [style.animation-delay]="(i * 0.06) + 's'"
+            [class]="'kpi-card--' + k.status">
+            <div class="card-glow"></div>
+
+            <!-- Head -->
+            <div class="kpi-card-head">
+              <div class="store-avatar">{{ k.label.substring(0,2).toUpperCase() }}</div>
+              <div class="store-info">
+                <div class="store-label">{{ k.label }}</div>
+                <div class="store-id">
+                  <span class="tag-label">ID</span>
+                  <span class="tag-value">#{{ k.storeId }}</span>
+                </div>
+              </div>
+              <span class="status-chip" [class]="'status-' + k.status">
+                {{ getStatusLabel(k.status) }}
+              </span>
+              <button class="btn-refresh-single" (click)="refreshStore(k.storeId, k.label)"
+                title="Actualizar" [disabled]="isLoadingKpi() === k.storeId">
+                @if (isLoadingKpi() === k.storeId) {
+                  <div class="mini-spin"></div>
+                } @else { ↻ }
+              </button>
+            </div>
+
+            <!-- PC Bar -->
+            <div class="gauge-block">
+              <div class="gauge-header">
+                <span class="gauge-label">PC — Cumplimiento</span>
+                <span class="gauge-value" [class]="getProgressClass(k.pc)">{{ fmt(k.pc) }}</span>
+              </div>
+              <div class="gauge-track">
+                <div class="gauge-fill" [class]="getBarClass(k.pc)"
+                  [style.width.%]="k.pc > 100 ? 100 : k.pc"></div>
+                <div class="pt-marker" [style.left.%]="k.pt > 100 ? 100 : k.pt"
+                  [title]="'PT: ' + fmt(k.pt)"></div>
+              </div>
+              <div class="gauge-sub">
+                @if (isLagging(k)) {
+                  <span class="lag-warn">⚠ PC por debajo del tiempo transcurrido</span>
+                } @else {
+                  <span class="lag-ok">✓ Ritmo adecuado</span>
+                }
+              </div>
+            </div>
+
+            <!-- PT Bar -->
+            <div class="gauge-block">
+              <div class="gauge-header">
+                <span class="gauge-label">PT — Tiempo transcurrido</span>
+                <span class="gauge-value pt-color">{{ fmt(k.pt) }}</span>
+              </div>
+              <div class="gauge-track">
+                <div class="gauge-fill bar-pt" [style.width.%]="k.pt > 100 ? 100 : k.pt"></div>
+              </div>
+            </div>
+
+            <!-- PC vs PT -->
+            <div class="comparison-row">
+              <div class="comp-item">
+                <div class="comp-num" [class]="getProgressClass(k.pc)">{{ fmt(k.pc) }}</div>
+                <div class="comp-lbl">PC</div>
+              </div>
+              <div class="comp-vs">vs</div>
+              <div class="comp-item">
+                <div class="comp-num pt-color">{{ fmt(k.pt) }}</div>
+                <div class="comp-lbl">PT</div>
+              </div>
+              <div class="comp-diff" [class]="k.pc >= k.pt ? 'diff-pos' : 'diff-neg'">
+                {{ k.pc >= k.pt ? '+' : '' }}{{ fmt(k.pc - k.pt) }}
+              </div>
+            </div>
+
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Loading skeleton cards while fetching -->
+    @if (isLoadingStores() || isLoadingKpi() !== null) {
+      <div class="kpi-grid" style="margin-top: 1rem">
+        @for (s of stores(); track s.idStore) {
+          @if (!kpis().some(k => k.storeId === s.idStore)) {
+            <div class="kpi-card skeleton">
+              <div class="skeleton-line w60"></div>
+              <div class="skeleton-line w40"></div>
+              <div class="skeleton-bar"></div>
+              <div class="skeleton-bar"></div>
+            </div>
+          }
+        }
+      </div>
+    }
+
+  </div>
+</div>

@@ -6,29 +6,17 @@ import { AuthRequest, AuthResponse, AuthUser, DataResponse } from '../models/Aut
 import { environment } from '../../../environments/environment.development';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class AuthService {
-  private readonly TOKEN_KEY = 'auth_token';
-  private readonly http = inject(HttpClient);
+  private readonly http   = inject(HttpClient);
   private readonly router = inject(Router);
+  private readonly TOKEN_KEY = 'auth_token';
 
-  /**
-   * Llama a POST /api/auth/login y guarda el JWT en localStorage.
-   */
-  login(credentials: AuthRequest): Observable<DataResponse<AuthResponse>> {
+  login(request: AuthRequest): Observable<DataResponse<AuthResponse>> {
     return this.http
-      .post<DataResponse<AuthResponse>>(
-        `${environment.apiUrl}/api/auth/login`,
-        credentials
-      )
-      .pipe(
-        tap((response) => {
-          if (response?.data?.token) {
-            this.saveToken(response.data.token);
-          }
-        })
-      );
+      .post<DataResponse<AuthResponse>>(`${environment.apiUrl}/api/auth/login`, request)
+      .pipe(tap(res => this.saveToken(res.data.token)));
   }
 
   logout(): void {
@@ -36,23 +24,11 @@ export class AuthService {
     this.router.navigate(['/login']);
   }
 
-  // ─── Token helpers ────────────────────────────────────────────────────────
-
-  saveToken(token: string): void {
-    localStorage.setItem(this.TOKEN_KEY, token);
-  }
-
-  getToken(): string | null {
-    return localStorage.getItem(this.TOKEN_KEY);
-  }
-
   isAuthenticated(): boolean {
     const token = this.getToken();
     if (!token) return false;
-
     try {
-      const payload = this.decodePayload(token);
-      // Verificar expiración (exp está en segundos)
+      const payload = this.decodeToken(token);
       return payload.exp * 1000 > Date.now();
     } catch {
       return false;
@@ -62,25 +38,37 @@ export class AuthService {
   getUser(): AuthUser | null {
     const token = this.getToken();
     if (!token) return null;
-
     try {
-      return this.decodePayload(token) as AuthUser;
+      return this.decodeToken(token);
     } catch {
       return null;
     }
   }
 
-  // ─── Decodificación del JWT (sin librerías externas) ──────────────────────
+  /** Shortcut — idCompany del usuario logueado */
+  getCompanyId(): number | null {
+    return this.getUser()?.idCompany ?? null;
+  }
 
-  private decodePayload(token: string): AuthUser {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    );
-    return JSON.parse(jsonPayload);
+  /** Shortcut — roles del usuario logueado */
+  getRoles(): string[] {
+    return this.getUser()?.roles ?? [];
+  }
+
+  isAdmin(): boolean {
+    return this.getRoles().includes('ROLE_ADMIN');
+  }
+
+  saveToken(token: string): void {
+    localStorage.setItem(this.TOKEN_KEY, token);
+  }
+
+  getToken(): string | null {
+    return localStorage.getItem(this.TOKEN_KEY);
+  }
+
+  private decodeToken(token: string): AuthUser {
+    const payload = token.split('.')[1];
+    return JSON.parse(atob(payload)) as AuthUser;
   }
 }

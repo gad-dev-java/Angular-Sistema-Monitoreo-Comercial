@@ -12,6 +12,10 @@ export class CompanyService {
   private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiUrl}/api/companies`;
 
+  getAll(): Observable<DataResponse<CompanyDto[]>> {
+    return this.http.get<DataResponse<CompanyDto[]>>(this.base);
+  }
+
   create(request: CreateCompanyRequest): Observable<DataResponse<CompanyDto>> {
     return this.http.post<DataResponse<CompanyDto>>(this.base, request);
   }

@@ -2,6 +2,15 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { AuthService } from '../../services/Auth';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 
+interface NavItem {
+  label: string;
+  icon: string;
+  route: string;
+  section: string;
+  badge?: number;
+  roles?: string[]; // roles que pueden acceder — vacío = todos
+}
+
 @Component({
   selector: 'app-shell',
   imports: [RouterLink, RouterOutlet],
@@ -14,32 +23,88 @@ export class ShellComponent {
   private readonly router = inject(Router);
 
   user = this.authService.getUser();
+  roles = this.authService.getRoles();
 
-  navItems = [
-    { label: 'Dashboard',  icon: '▦',  route: '/dashboard',  section: 'Principal' },
-    { label: 'Empresas',   icon: '🏢',  route: '/companies',  section: 'Principal' },
-    { label: 'Locales',    icon: '📍',  route: '/stores',     section: 'Principal' },
-    { label: 'Objetivos',  icon: '🎯',  route: '/objectives', section: 'Gestión'   },
-    { label: 'Ventas',     icon: '💰',  route: '/sales',      section: 'Gestión'   },
-    { label: 'Alertas',    icon: '🔔',  route: '/alerts',     section: 'Gestión',  badge: 3 },
-    { label: 'KPI',        icon: '📊',  route: '/kpi',        section: 'Reportes'  },
-    { label: 'Reportes',   icon: '📋',  route: '/reports',    section: 'Reportes'  },
+  navItems: NavItem[] = [
+    { label: 'Dashboard', icon: '▦', route: '/dashboard', section: 'Principal' },
+    {
+      label: 'Empresas',
+      icon: '🏢',
+      route: '/companies',
+      section: 'Principal',
+      roles: ['ROLE_ADMIN'],
+    },
+    { label: 'Locales', icon: '📍', route: '/stores', section: 'Principal', roles: ['ROLE_ADMIN'] },
+    {
+      label: 'Objetivos',
+      icon: '🎯',
+      route: '/objectives',
+      section: 'Gestión',
+      roles: ['ROLE_ADMIN', 'ROLE_GERENTE'],
+    },
+    {
+      label: 'Ventas',
+      icon: '💰',
+      route: '/sales',
+      section: 'Gestión',
+      roles: ['ROLE_ADMIN', 'ROLE_GERENTE', 'ROLE_SUPERVISOR'],
+    },
+    {
+      label: 'Alertas',
+      icon: '🔔',
+      route: '/alerts',
+      section: 'Gestión',
+      roles: ['ROLE_ADMIN', 'ROLE_GERENTE'],
+    },
+    {
+      label: 'KPI',
+      icon: '📊',
+      route: '/kpi',
+      section: 'Reportes',
+      roles: ['ROLE_GERENTE', 'ROLE_SUPERVISOR'],
+    },
+    {
+      label: 'Reportes',
+      icon: '📋',
+      route: '/reports',
+      section: 'Reportes',
+      roles: ['ROLE_ADMIN', 'ROLE_GERENTE'],
+    },
   ];
 
   get sections(): string[] {
-    return [...new Set(this.navItems.map(i => i.section))];
+    return [...new Set(this.navItems.map((i) => i.section))];
   }
 
-  itemsBySection(section: string) {
-    return this.navItems.filter(i => i.section === section);
+  itemsBySection(section: string): NavItem[] {
+    return this.navItems.filter((i) => i.section === section);
+  }
+
+  canAccess(item: NavItem): boolean {
+    if (!item.roles || item.roles.length === 0) return true;
+    return item.roles.some((r) => this.roles.includes(r));
   }
 
   isActive(route: string): boolean {
     return this.router.url === route || this.router.url.startsWith(route + '/');
   }
 
+  onNavClick(item: NavItem): void {
+    if (!this.canAccess(item)) return; // bloquea navegación
+    this.router.navigate([item.route]);
+  }
+
   getUserInitials(): string {
-    return (this.user?.email ?? 'U').substring(0, 2).toUpperCase();
+    return (this.user?.name ?? this.user?.email ?? 'U').substring(0, 2).toUpperCase();
+  }
+
+  getRoleLabel(): string {
+    const map: Record<string, string> = {
+      ROLE_ADMIN: 'Administrador',
+      ROLE_GERENTE: 'Gerente',
+      ROLE_SUPERVISOR: 'Supervisor',
+    };
+    return map[this.roles[0]] ?? 'Usuario';
   }
 
   logout(): void {

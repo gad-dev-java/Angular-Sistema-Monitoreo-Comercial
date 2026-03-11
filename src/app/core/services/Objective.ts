@@ -12,6 +12,10 @@ export class ObjectiveService {
 private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiUrl}/api/sales-objectives`;
 
+  getByStore(storeId: number): Observable<DataResponse<SalesObjectiveDto[]>> {
+    return this.http.get<DataResponse<SalesObjectiveDto[]>>(`${this.base}/store/${storeId}`);
+  }
+
   create(request: CreateSalesObjectiveRequest): Observable<DataResponse<SalesObjectiveDto>> {
     return this.http.post<DataResponse<SalesObjectiveDto>>(this.base, request);
   }
