@@ -2,69 +2,103 @@
 <div class="topbar">
   <div class="topbar-left">
     <div class="topbar-title">Dashboard</div>
-    <div class="topbar-sub">MARZO 2026 · SEMANA 10</div>
+    <div class="topbar-sub">{{ getCurrentPeriod() }}</div>
   </div>
   <div class="topbar-actions">
-    <button class="btn-ghost">Exportar CSV</button>
-    <button class="btn-primary">+ Registrar Venta</button>
-    <div class="notif-btn">🔔<div class="notif-dot"></div></div>
+    @if (unreadAlerts() > 0) {
+      <div class="notif-btn">🔔<div class="notif-dot"></div></div>
+    }
   </div>
 </div>
 
+<!-- Loading -->
+@if (isLoading()) {
+  <div class="loading-overlay">
+    <div class="spinner"></div>
+    <span>Cargando datos...</span>
+  </div>
+}
+
 <!-- Content -->
+@if (!isLoading()) {
 <div class="main-content">
 
+  <!-- KPI strip -->
   <div class="kpi-grid">
-    @for (kpi of kpis; track kpi.label) {
-      <div class="kpi-card" [class]="'c-' + kpi.accent">
-        <div class="kpi-label">{{ kpi.label }}</div>
-        <div class="kpi-value">{{ kpi.value }}</div>
-        <div class="kpi-delta" [class]="kpi.trend">{{ kpi.delta }}</div>
+    <div class="kpi-card c-blue">
+      <div class="kpi-label">Locales Activos</div>
+      <div class="kpi-value">{{ totalStores() }}</div>
+      <div class="kpi-delta up">● registrados en tu empresa</div>
+    </div>
+    <div class="kpi-card c-green">
+      <div class="kpi-label">Cumplimiento Prom.</div>
+      <div class="kpi-value">{{ fmt(avgPc()) }}</div>
+      <div class="kpi-delta" [class]="avgPc() >= 70 ? 'up' : avgPc() >= 50 ? 'warn' : 'down'">
+        {{ avgPc() >= 70 ? '▲ Buen ritmo' : avgPc() >= 50 ? '● Ritmo moderado' : '▼ Bajo rendimiento' }}
       </div>
-    }
+    </div>
+    <div class="kpi-card c-warn">
+      <div class="kpi-label">Alertas Sin Leer</div>
+      <div class="kpi-value">{{ unreadAlerts() }}</div>
+      <div class="kpi-delta warn">● notificaciones activas</div>
+    </div>
+    <div class="kpi-card c-red">
+      <div class="kpi-label">Locales en Riesgo</div>
+      <div class="kpi-value">{{ riskCount() }}</div>
+      <div class="kpi-delta down">▼ PC menor a 50%</div>
+    </div>
   </div>
 
   <div class="mid-grid">
 
+    <!-- Bar chart -->
     <div class="section-card">
       <div class="section-head">
         <h3>Cumplimiento por Local</h3>
-        <span class="section-tag">Esta semana</span>
+        <span class="section-tag">PC actual</span>
       </div>
-      <div class="chart-area">
-        <div class="bar-chart">
-          @for (bar of bars; track bar.label) {
-            <div class="bar-group">
-              <div class="bars">
-                <div class="bar bar-meta"   [style.height.px]="bar.metaH"></div>
-                <div class="bar bar-actual" [style.height.px]="bar.actualH"></div>
+      @if (bars().length > 0) {
+        <div class="chart-area">
+          <div class="bar-chart">
+            @for (bar of bars(); track bar.label) {
+              <div class="bar-group">
+                <div class="bars">
+                  <div class="bar bar-meta"   [style.height.px]="bar.metaH"></div>
+                  <div class="bar bar-actual" [style.height.px]="bar.actualH"></div>
+                </div>
+                <div class="bar-label">{{ bar.label }}</div>
               </div>
-              <div class="bar-label">{{ bar.label }}</div>
-            </div>
-          }
+            }
+          </div>
         </div>
-      </div>
-      <div class="chart-legend">
-        <div class="legend-item"><div class="legend-dot meta-dot"></div> Meta</div>
-        <div class="legend-item"><div class="legend-dot actual-dot"></div> Ventas reales</div>
-      </div>
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot meta-dot"></div> Meta referencial (100%)</div>
+          <div class="legend-item"><div class="legend-dot actual-dot"></div> PC real</div>
+        </div>
+      } @else {
+        <div class="empty-chart">Sin datos de locales</div>
+      }
     </div>
 
+    <!-- Alertas -->
     <div class="section-card">
       <div class="section-head">
         <h3>Alertas Recientes</h3>
-        <span class="section-tag">{{ alerts.length }} activas</span>
+        <span class="section-tag">{{ unreadAlerts() }} sin leer</span>
       </div>
       <div class="alert-list">
-        @for (alert of alerts; track alert.title) {
+        @if (alerts().length === 0) {
+          <div class="empty-alerts">✓ Sin alertas pendientes</div>
+        }
+        @for (alert of alerts(); track alert.idNotification) {
           <div class="alert-item">
-            <div class="alert-pip" [class]="'pip-' + alert.type"></div>
+            <div class="alert-pip" [class]="'pip-' + (alert.severityLevel ?? 'warning').toLowerCase()"></div>
             <div class="alert-body">
-              <div class="alert-title">{{ alert.title }}</div>
-              <div class="alert-time">{{ alert.time }}</div>
+              <div class="alert-title">{{ alert.message }}</div>
+              <div class="alert-time">{{ alert.nameStore }}</div>
             </div>
-            <span class="alert-badge" [class]="'badge-' + alert.type">
-              {{ alert.type.toUpperCase() }}
+            <span class="alert-badge" [class]="'badge-' + (alert.severityLevel ?? 'warning').toLowerCase()">
+              {{ alert.severityLevel ?? 'WARNING' }}
             </span>
           </div>
         }
@@ -73,44 +107,47 @@
 
   </div>
 
-  <div class="section-card">
-    <div class="section-head">
-      <h3>Resumen de Locales</h3>
-      <span class="section-tag">PC = ventas / meta × 100</span>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Local</th><th>Meta Mensual</th><th>Ventas Acum.</th>
-            <th>PC %</th><th>PT %</th><th>Estado</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (store of stores; track store.name) {
+  <!-- Tabla locales -->
+  @if (storeRows().length > 0) {
+    <div class="section-card">
+      <div class="section-head">
+        <h3>Resumen de Locales</h3>
+        <span class="section-tag">PC = ventas / meta × 100</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
             <tr>
-              <td class="td-name">{{ store.name }}</td>
-              <td class="td-mono">{{ store.meta }}</td>
-              <td class="td-mono">{{ store.ventas }}</td>
-              <td>
-                <div class="progress-cell">
-                  <div class="progress-bar">
-                    <div class="progress-fill" [class]="getProgressClass(store.pc)" [style.width.%]="store.pc"></div>
-                  </div>
-                  <span class="progress-pct" [class]="getProgressClass(store.pc)">{{ store.pc }}%</span>
-                </div>
-              </td>
-              <td class="td-mono">{{ store.pt }}%</td>
-              <td>
-                <span class="status-chip" [class]="'chip-' + store.status">
-                  {{ getStatusLabel(store.status) }}
-                </span>
-              </td>
+              <th>Local</th><th>Ciudad</th><th>PC %</th><th>PT %</th><th>Estado</th>
             </tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            @for (row of storeRows(); track row.store.idStore) {
+              <tr>
+                <td class="td-name">{{ row.store.name }}</td>
+                <td class="td-mono">{{ row.store.city }}</td>
+                <td>
+                  <div class="progress-cell">
+                    <div class="progress-bar">
+                      <div class="progress-fill" [class]="getProgressClass(row.pc)"
+                        [style.width.%]="row.pc > 100 ? 100 : row.pc"></div>
+                    </div>
+                    <span class="progress-pct" [class]="getProgressClass(row.pc)">{{ fmt(row.pc) }}</span>
+                  </div>
+                </td>
+                <td class="td-mono">{{ fmt(row.pt) }}</td>
+                <td>
+                  <span class="status-chip" [class]="'chip-' + row.status">
+                    {{ getStatusLabel(row.status) }}
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
     </div>
-  </div>
+  }
 
 </div>
+}

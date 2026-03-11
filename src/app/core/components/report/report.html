@@ -1,5 +1,110 @@
-<div style="height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1rem;background:#0d1117;color:#7a8ba0;">
-      <div style="font-size:3rem;opacity:.3">📋</div>
-      <div style="font-family:'Syne',sans-serif;font-size:1.1rem;color:#e2e8f0;">Reportes</div>
-      <div style="font-family:'DM Mono',monospace;font-size:.75rem;">Próximamente — exportación Excel</div>
+@if (successMsg()) {
+  <div class="toast"><div class="toast-icon">✓</div>{{ successMsg() }}</div>
+}
+
+<div class="reports-page">
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">Reportes</div>
+      <p class="page-sub">Exporta datos de cumplimiento de tu empresa</p>
     </div>
+  </div>
+
+  <div class="content-scroll">
+
+    <!-- Company context -->
+    <div class="context-card">
+      <div class="context-icon">🏢</div>
+      <div class="context-info">
+        <div class="context-label">Empresa activa</div>
+        <div class="context-value">ID #{{ user?.idCompany }}</div>
+      </div>
+      <div class="context-badge">Solo tus locales</div>
+    </div>
+
+    <!-- Report card -->
+    <div class="report-card">
+      <div class="report-card-glow"></div>
+
+      <div class="report-icon-wrap">
+        <div class="report-icon">📊</div>
+      </div>
+
+      <div class="report-info">
+        <div class="report-title">Reporte de Cumplimiento</div>
+        <div class="report-desc">
+          Exporta el estado de cumplimiento (PC y PT) de todos los locales activos
+          de tu empresa en formato Excel.
+        </div>
+
+        <div class="report-meta-row">
+          <div class="report-meta-item">
+            <span class="meta-icon">📋</span>
+            <span>Columnas: Local, PC (%), PT (%), Estado</span>
+          </div>
+          <div class="report-meta-item">
+            <span class="meta-icon">🔒</span>
+            <span>Filtrado por tu empresa automáticamente</span>
+          </div>
+          <div class="report-meta-item">
+            <span class="meta-icon">📅</span>
+            <span>Datos en tiempo real al momento de exportar</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="report-action">
+        <button class="btn-export" (click)="exportExcel()" [disabled]="isExporting()">
+          @if (isExporting()) {
+            <div class="loader-dots"><span></span><span></span><span></span></div>
+            Generando...
+          } @else {
+            <span class="export-icon">⬇</span>
+            Exportar Excel
+          }
+        </button>
+        <div class="export-hint">Archivo .xlsx · compliance_report</div>
+      </div>
+
+    </div>
+
+    <!-- Error -->
+    @if (errorMsg()) {
+      <div class="error-banner">
+        <span>⚠</span> {{ errorMsg() }}
+      </div>
+    }
+
+    <!-- Preview table -->
+    <div class="preview-card">
+      <div class="preview-label">Vista previa del formato</div>
+      <table class="preview-table">
+        <thead>
+          <tr>
+            <th>Store Name</th>
+            <th>PC (%)</th>
+            <th>PT (%)</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Local Ejemplo A</td>
+            <td class="num-green">87.5</td>
+            <td class="num-purple">70.0</td>
+            <td><span class="status-on">ON TRACK</span></td>
+          </tr>
+          <tr>
+            <td>Local Ejemplo B</td>
+            <td class="num-red">42.0</td>
+            <td class="num-purple">70.0</td>
+            <td><span class="status-risk">AT RISK</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="preview-note">* Los datos reales se calculan al momento de exportar</div>
+    </div>
+
+  </div>
+</div>

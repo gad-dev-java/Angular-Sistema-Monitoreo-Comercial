@@ -1,0 +1,132 @@
+@if (successMsg()) {
+  <div class="toast">✓ {{ successMsg() }}</div>
+}
+
+<div class="user-page">
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">Usuarios</div>
+      <p class="page-sub">Crea usuarios para tu empresa</p>
+    </div>
+  </div>
+
+  <div class="content-scroll">
+    <div class="layout-grid">
+
+      <!-- Form -->
+      <div class="form-card">
+        <div class="form-card-head">
+          <div class="form-card-icon">👤</div>
+          <div>
+            <div class="form-card-title">Nuevo Usuario</div>
+            <div class="form-card-sub">El usuario tendrá acceso según su rol asignado</div>
+          </div>
+        </div>
+
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+
+          <!-- Nombre -->
+          <div class="field">
+            <label class="field-label">Nombre completo</label>
+            <input class="field-input" [class.input-error]="hasError('name')"
+              formControlName="name" type="text" placeholder="Ej: María García" autocomplete="off">
+            @if (hasError('name')) {
+              <div class="field-error">Mínimo 3 caracteres</div>
+            }
+          </div>
+
+          <!-- Email -->
+          <div class="field">
+            <label class="field-label">Correo electrónico</label>
+            <input class="field-input" [class.input-error]="hasError('email')"
+              formControlName="email" type="email" placeholder="usuario@empresa.com" autocomplete="off">
+            @if (hasError('email')) {
+              <div class="field-error">Correo inválido</div>
+            }
+          </div>
+
+          <!-- Password -->
+          <div class="field">
+            <label class="field-label">Contraseña</label>
+            <div class="input-wrap">
+              <input class="field-input" [class.input-error]="hasError('password')"
+                formControlName="password"
+                [type]="showPassword() ? 'text' : 'password'"
+                placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+              <button type="button" class="toggle-pw" (click)="togglePassword()">
+                {{ showPassword() ? '🙈' : '👁' }}
+              </button>
+            </div>
+            @if (hasError('password')) {
+              <div class="field-error">Mínimo 6 caracteres</div>
+            }
+          </div>
+
+          <!-- Rol -->
+          <div class="field">
+            <label class="field-label">Rol</label>
+            <div class="role-selector">
+              @for (r of roles; track r.value) {
+                <label class="role-option" [class.selected]="form.get('role')?.value === r.value">
+                  <input type="radio" formControlName="role" [value]="r.value" hidden>
+                  <div class="role-icon">
+                    {{ r.value === 'ROLE_ADMIN' ? '🔑' : r.value === 'ROLE_GERENTE' ? '📋' : '👷' }}
+                  </div>
+                  <div class="role-info">
+                    <div class="role-name">{{ r.label }}</div>
+                    <div class="role-desc">{{ r.desc }}</div>
+                  </div>
+                </label>
+              }
+            </div>
+          </div>
+
+          @if (errorMsg()) {
+            <div class="form-error">⚠ {{ errorMsg() }}</div>
+          }
+
+          <button type="submit" class="btn-submit" [disabled]="isSubmitting()">
+            @if (isSubmitting()) {
+              <div class="loader-dots"><span></span><span></span><span></span></div>
+              Creando...
+            } @else {
+              + Crear Usuario
+            }
+          </button>
+
+        </form>
+      </div>
+
+      <!-- Lista de creados en esta sesión -->
+      <div class="history-card">
+        <div class="history-head">
+          <div class="history-title">Creados en esta sesión</div>
+          <span class="history-count">{{ createdUsers().length }}</span>
+        </div>
+
+        @if (createdUsers().length === 0) {
+          <div class="history-empty">
+            <div style="font-size:2rem;opacity:.2">👤</div>
+            <p>Los usuarios creados aparecerán aquí</p>
+          </div>
+        }
+
+        @for (u of createdUsers(); track u.idUser) {
+          <div class="user-item">
+            <div class="user-avatar">{{ u.name.substring(0,2).toUpperCase() }}</div>
+            <div class="user-info">
+              <div class="user-name">{{ u.name }}</div>
+              <div class="user-email">{{ u.email }}</div>
+            </div>
+            <span class="user-role-chip"
+              [class]="u.role === 'ROLE_ADMIN' ? 'chip-admin' : u.role === 'ROLE_GERENTE' ? 'chip-gerente' : 'chip-supervisor'">
+              {{ getRoleLabel(u.role) }}
+            </span>
+          </div>
+        }
+      </div>
+
+    </div>
+  </div>
+</div>

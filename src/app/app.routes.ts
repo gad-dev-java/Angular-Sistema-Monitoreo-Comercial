@@ -2,10 +2,9 @@ import { Routes } from '@angular/router';
 import { authGuard, noAuthGuard } from './core/guards/auth';
 import { roleGuard } from './core/guards/role';
 
-const ADMIN = ['ROLE_ADMIN'];
-const GERENTE = ['ROLE_GERENTE'];
-const SUPERVISOR = ['ROLE_SUPERVISOR']
-const GER_SUP = ['ROLE_GERENTE', 'ROLE_SUPERVISOR'];
+const ADMIN          = ['ROLE_ADMIN'];
+const ADMIN_GERENTE  = ['ROLE_ADMIN', 'ROLE_GERENTE'];
+const ALL_ROLES      = ['ROLE_ADMIN', 'ROLE_GERENTE', 'ROLE_SUPERVISOR'];
 
 export const routes: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -33,36 +32,42 @@ export const routes: Routes = [
       },
       {
         path: 'stores',
-        canActivate: [roleGuard(ADMIN)],
+        canActivate: [roleGuard(ALL_ROLES)],
         loadComponent: () => import('./core/components/store/store').then((m) => m.StoreComponent),
       },
       {
         path: 'objectives',
-        canActivate: [roleGuard(GERENTE)],
+        canActivate: [roleGuard(ADMIN_GERENTE)],
         loadComponent: () =>
           import('./core/components/objective/objective').then((m) => m.ObjectiveComponent),
       },
       {
         path: 'sales',
-        canActivate: [roleGuard(SUPERVISOR)],
+        canActivate: [roleGuard(ALL_ROLES)],  // ← GERENTE + SUPERVISOR
         loadComponent: () => import('./core/components/sale/sale').then((m) => m.SaleComponent),
       },
       {
         path: 'alerts',
-        canActivate: [roleGuard(GERENTE)],
+        canActivate: [roleGuard(ALL_ROLES)],
         loadComponent: () => import('./core/components/alert/alert').then((m) => m.AlertComponent),
       },
       {
         path: 'kpi',
-        canActivate: [roleGuard(GER_SUP)],
+        canActivate: [roleGuard(ALL_ROLES)],
         loadComponent: () => import('./core/components/kpi/kpi').then((m) => m.KpiComponent),
       },
       {
         path: 'reports',
-        canActivate: [roleGuard(GERENTE)],
+        canActivate: [roleGuard(ADMIN_GERENTE)],
         loadComponent: () =>
           import('./core/components/report/report').then((m) => m.ReportComponent),
       },
+      {
+  path: 'users',
+  canActivate: [roleGuard(ADMIN_GERENTE)],
+  loadComponent: () =>
+    import('./core/components/User/User').then(m => m.UserComponent),
+},
     ],
   },
   { path: '**', redirectTo: 'dashboard' },

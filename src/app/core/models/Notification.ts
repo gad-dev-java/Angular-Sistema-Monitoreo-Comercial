@@ -1,9 +1,8 @@
 export interface NotificationDto {
   idNotification: number;
-  storeId: number;
-  storeName?: string;
+  nameStore: string;       // nombre del local directo
+  alertType: string;       // "ALERTA"
+  severityLevel: string;   // "CRITICAL" | "WARNING" | "OK"
   message: string;
-  type: 'CRITICAL' | 'WARNING' | 'OK' | string;
-  read: boolean;
-  createdAt?: string;
+  isRead: boolean;
 }
