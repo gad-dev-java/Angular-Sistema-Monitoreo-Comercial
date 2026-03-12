@@ -32,42 +32,37 @@ function endAfterStart(group: AbstractControl): ValidationErrors | null {
   styleUrl: 'objective.css',
 })
 export class ObjectiveComponent {
-  private readonly fb = inject(FormBuilder);
+  private readonly fb               = inject(FormBuilder);
   private readonly objectiveService = inject(ObjectiveService);
-  private readonly storeService = inject(StoreService);
-  private readonly authService = inject(AuthService);
+  private readonly storeService     = inject(StoreService);
+  private readonly authService      = inject(AuthService);
 
-  stores = signal<StoreDto[]>([]);
-  selectedStore = signal<StoreDto | null>(null);
-  objectives = signal<SalesObjectiveDto[]>([]);
+  stores          = signal<StoreDto[]>([]);
+  selectedStore   = signal<StoreDto | null>(null);
+  objectives      = signal<SalesObjectiveDto[]>([]);
   isLoadingStores = signal(true);
-  isLoadingObj = signal(false);
-  isSaving = signal(false);
-  errorMsg = signal<string | null>(null);
-  successMsg = signal<string | null>(null);
-  showModal = signal(false);
-  filterPeriod = signal<string>('ALL');
-  searchTerm = signal('');
+  isLoadingObj    = signal(false);
+  isSaving        = signal(false);
+  errorMsg        = signal<string | null>(null);
+  successMsg      = signal<string | null>(null);
+  showModal       = signal(false);
+  filterPeriod    = signal<string>('ALL');
+  searchTerm      = signal('');
 
   readonly periodTypes = [
-    { label: 'Mensual', value: 'MENSUAL' },
-    { label: 'Trimestral', value: 'TRIMESTRAL' },
-    { label: 'Semestral', value: 'SEMESTRAL' },
-    { label: 'Anual', value: 'ANUAL' },
+    { label: 'Mensual',    value: 'MENSUAL'    },
+    { label: 'Semanal',    value: 'SEMANAL'    },
   ];
 
   today = new Date().toISOString().split('T')[0];
 
   form = this.fb.group(
     {
-      nameStore: ['', [Validators.required]],
-      targetAmount: [
-        null as number | null,
-        [Validators.required, Validators.min(0.01), Validators.max(99999999.99)],
-      ],
-      periodType: ['', [Validators.required]],
-      startDate: ['', [Validators.required]],
-      endDate: ['', [Validators.required]],
+      nameStore:    ['', [Validators.required]],
+      targetAmount: [null as number | null, [Validators.required, Validators.min(0.01), Validators.max(99999999.99)]],
+      periodType:   ['', [Validators.required]],
+      startDate:    ['', [Validators.required]],
+      endDate:      ['', [Validators.required]],
     },
     { validators: endAfterStart },
   );
@@ -75,18 +70,15 @@ export class ObjectiveComponent {
   filtered = computed(() => {
     let list = this.objectives();
     const period = this.filterPeriod();
-    if (period !== 'ALL') list = list.filter((o) => o.periodType === period);
+    if (period !== 'ALL') list = list.filter(o => o.periodType === period);
     const term = this.searchTerm().toLowerCase();
-    if (term) list = list.filter((o) => o.nameStore.toLowerCase().includes(term));
+    if (term) list = list.filter(o => o.nameStore.toLowerCase().includes(term));
     return list;
   });
 
   ngOnInit(): void {
     const companyId = this.authService.getCompanyId();
-    if (!companyId) {
-      this.isLoadingStores.set(false);
-      return;
-    }
+    if (!companyId) { this.isLoadingStores.set(false); return; }
 
     this.storeService.getByCompany(companyId).subscribe({
       next: (res) => {
@@ -105,10 +97,7 @@ export class ObjectiveComponent {
     this.errorMsg.set(null);
 
     this.objectiveService.getByStore(store.idStore).subscribe({
-      next: (res) => {
-        this.objectives.set(res.data);
-        this.isLoadingObj.set(false);
-      },
+      next: (res) => { this.objectives.set(res.data); this.isLoadingObj.set(false); },
       error: (err: HttpErrorResponse) => {
         this.isLoadingObj.set(false);
         this.errorMsg.set(parseApiError(err));
@@ -116,10 +105,32 @@ export class ObjectiveComponent {
     });
   }
 
-  isFieldInvalid(field: string): boolean {
-    const c = this.form.get(field)!;
-    return c.invalid && (c.dirty || c.touched);
+  // ── Auto-fill dates ──────────────────────────────────────────
+
+  onPeriodChange(value: string): void {
+    // Si no hay fecha inicio, pone hoy
+    const currentStart = this.form.get('startDate')?.value || this.today;
+    if (!this.form.get('startDate')?.value) {
+      this.form.patchValue({ startDate: this.today });
+    }
+    this.calcEndDate(currentStart, value);
   }
+
+  onStartDateChange(start: string): void {
+    const period = this.form.get('periodType')?.value;
+    if (period && start) this.calcEndDate(start, period);
+  }
+
+  private calcEndDate(start: string, period: string): void {
+    const d = new Date(start + 'T00:00:00');
+    switch (period) {
+      case 'SEMANAL':    d.setDate(d.getDate() + 7);          break;
+      case 'MENSUAL':    d.setMonth(d.getMonth() + 1);        break;
+    }
+    this.form.patchValue({ endDate: d.toISOString().split('T')[0] });
+  }
+
+  // ── Modal ────────────────────────────────────────────────────
 
   openCreate(): void {
     this.form.reset();
@@ -137,25 +148,22 @@ export class ObjectiveComponent {
   }
 
   onSubmit(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
+    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.isSaving.set(true);
     this.errorMsg.set(null);
 
     const v = this.form.value;
     const request: CreateSalesObjectiveRequest = {
-      nameStore: v.nameStore!,
+      nameStore:    v.nameStore!,
       targetAmount: parseFloat(String(v.targetAmount)),
-      periodType: v.periodType!,
-      startDate: v.startDate!,
-      endDate: v.endDate!,
+      periodType:   v.periodType!,
+      startDate:    v.startDate!,
+      endDate:      v.endDate!,
     };
 
     this.objectiveService.create(request).subscribe({
       next: (res) => {
-        this.objectives.update((list) => [res.data, ...list]);
+        this.objectives.update(list => [res.data, ...list]);
         this.isSaving.set(false);
         this.closeModal();
         this.toast('Objetivo registrado.');
@@ -167,6 +175,13 @@ export class ObjectiveComponent {
     });
   }
 
+  // ── Helpers ──────────────────────────────────────────────────
+
+  isFieldInvalid(field: string): boolean {
+    const c = this.form.get(field)!;
+    return c.invalid && (c.dirty || c.touched);
+  }
+
   getDaysLeft(endDate: string): number {
     const end = new Date(endDate);
     const now = new Date();
@@ -176,40 +191,30 @@ export class ObjectiveComponent {
   }
 
   getDaysLeftClass(days: number): string {
-    if (days < 0) return 'expired';
-    if (days <= 7) return 'urgent';
+    if (days < 0)   return 'expired';
+    if (days <= 7)  return 'urgent';
     if (days <= 30) return 'warn';
     return 'ok';
   }
 
   getPeriodLabel(type: string): string {
-    return this.periodTypes.find((p) => p.value === type)?.label ?? type;
+    return this.periodTypes.find(p => p.value === type)?.label ?? type;
   }
 
   getPeriodClass(type: string): string {
     const map: Record<string, string> = {
-      MENSUAL: 'chip-blue',
-      TRIMESTRAL: 'chip-green',
-      SEMESTRAL: 'chip-warn',
-      ANUAL: 'chip-purple',
+      SEMANAL: 'chip-green', MENSUAL: 'chip-blue',
+      TRIMESTRAL: 'chip-warn', SEMESTRAL: 'chip-purple', ANUAL: 'chip-purple',
     };
     return map[type] ?? 'chip-blue';
   }
 
   formatDate(date: string): string {
-    return new Date(date).toLocaleDateString('es-PE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
+    return new Date(date).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
   }
 
   formatAmount(amount: number): string {
-    return new Intl.NumberFormat('es-PE', {
-      style: 'currency',
-      currency: 'PEN',
-      minimumFractionDigits: 2,
-    }).format(amount);
+    return new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN', minimumFractionDigits: 2 }).format(amount);
   }
 
   private toast(msg: string): void {

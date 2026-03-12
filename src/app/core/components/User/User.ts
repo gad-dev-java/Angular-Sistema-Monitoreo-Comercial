@@ -36,9 +36,9 @@ export class UserComponent implements OnInit{
   });
 
   roles = [
-    { value: 'ROLE_ADMIN',       label: 'Administrador', desc: 'Gestiona empresas, locales y usuarios' },
-    { value: 'ROLE_GERENTE',     label: 'Gerente',       desc: 'Gestiona objetivos y alertas' },
-    { value: 'ROLE_SUPERVISOR',  label: 'Supervisor',    desc: 'Registra ventas y ve KPIs' },
+    { value: 'ADMIN',       label: 'Administrador', desc: 'Gestiona empresas, locales y usuarios' },
+    { value: 'GERENTE',     label: 'Gerente',       desc: 'Gestiona objetivos y alertas' },
+    { value: 'SUPERVISOR',  label: 'Supervisor',    desc: 'Registra ventas y ve KPIs' },
   ];
 
   ngOnInit(): void {

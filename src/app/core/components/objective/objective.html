@@ -24,7 +24,7 @@
 
   <div class="content-scroll">
 
-    <!-- ── Store selector ── -->
+    <!-- Store selector -->
     @if (isLoadingStores()) {
       <div class="loading-row"><div class="spinner"></div> Cargando locales...</div>
     } @else if (stores().length === 0) {
@@ -49,12 +49,10 @@
       </div>
     }
 
-    <!-- ── Loading objectives ── -->
     @if (isLoadingObj()) {
       <div class="loading-row"><div class="spinner"></div> Cargando objetivos...</div>
     }
 
-    <!-- ── Sin local seleccionado ── -->
     @if (!selectedStore() && !isLoadingStores() && stores().length > 0) {
       <div class="empty-state" style="margin-top:1rem">
         <div class="empty-art">👆</div>
@@ -65,7 +63,6 @@
 
     @if (selectedStore() && !isLoadingObj()) {
 
-      <!-- Filter pills -->
       <div class="filter-bar">
         <button class="filter-pill" [class.active]="filterPeriod() === 'ALL'"
           (click)="filterPeriod.set('ALL')">Todos</button>
@@ -75,7 +72,6 @@
         }
       </div>
 
-      <!-- Stats -->
       @if (objectives().length > 0) {
         <div class="stats-bar">
           <div class="stat-pill">
@@ -89,7 +85,6 @@
         </div>
       }
 
-      <!-- Empty for store -->
       @if (objectives().length === 0) {
         <div class="empty-state">
           <div class="empty-art">🎯</div>
@@ -99,7 +94,6 @@
         </div>
       }
 
-      <!-- No results after filter -->
       @if (objectives().length > 0 && filtered().length === 0) {
         <div class="no-results">
           <div style="font-size:2rem;opacity:.3">🔍</div>
@@ -107,7 +101,6 @@
         </div>
       }
 
-      <!-- Grid -->
       @if (filtered().length > 0) {
         <div class="objectives-grid">
           @for (obj of filtered(); track obj.idObjective) {
@@ -178,6 +171,7 @@
         }
         <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="premium-form">
           <div class="form-section-label">Local y meta</div>
+
           <div class="field">
             <label class="field-label">Nombre del local</label>
             <div class="input-group-premium">
@@ -189,6 +183,7 @@
               <div class="field-error-msg">El nombre del local es requerido.</div>
             }
           </div>
+
           <div class="field">
             <label class="field-label">Meta de ventas (S/)</label>
             <div class="input-group-premium">
@@ -205,10 +200,14 @@
               </div>
             }
           </div>
+
+          <!-- Tipo de periodo — dispara auto-fill de fechas -->
           <div class="field">
             <label class="field-label">Tipo de periodo</label>
             <div class="input-group-premium">
-              <select formControlName="periodType" [class.invalid]="isFieldInvalid('periodType')">
+              <select formControlName="periodType"
+                [class.invalid]="isFieldInvalid('periodType')"
+                (change)="onPeriodChange($any($event.target).value)">
                 <option value="" disabled>Selecciona un periodo</option>
                 @for (p of periodTypes; track p.value) {
                   <option [value]="p.value">{{ p.label }}</option>
@@ -220,19 +219,24 @@
               <div class="field-error-msg">Selecciona un tipo de periodo.</div>
             }
           </div>
+
           <div class="form-section-label" style="margin-top:1.5rem;">Período de vigencia</div>
           <div class="dates-grid">
+            <!-- Fecha inicio — al cambiar recalcula fecha fin -->
             <div class="field">
               <label class="field-label">Fecha de inicio</label>
               <div class="input-group-premium">
                 <input type="date" formControlName="startDate" [min]="today"
-                  [class.invalid]="isFieldInvalid('startDate')" />
+                  [class.invalid]="isFieldInvalid('startDate')"
+                  (change)="onStartDateChange($any($event.target).value)" />
                 <div class="input-focus-line"></div>
               </div>
               @if (isFieldInvalid('startDate')) {
                 <div class="field-error-msg">La fecha de inicio es requerida.</div>
               }
             </div>
+
+            <!-- Fecha fin — se calcula automáticamente -->
             <div class="field">
               <label class="field-label">Fecha de fin</label>
               <div class="input-group-premium">
@@ -245,11 +249,13 @@
               }
             </div>
           </div>
+
           @if (form.hasError('endBeforeStart') && form.get('endDate')?.touched) {
             <div class="field-error-msg" style="margin-top:-.5rem;margin-bottom:1rem;">
               La fecha de fin debe ser posterior a la de inicio.
             </div>
           }
+
           <div class="modal-footer-premium">
             <button type="button" class="btn-cancel" (click)="closeModal()">Cancelar</button>
             <button type="submit" class="btn-submit-premium" [disabled]="isSaving()">

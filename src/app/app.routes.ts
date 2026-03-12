@@ -2,9 +2,9 @@ import { Routes } from '@angular/router';
 import { authGuard, noAuthGuard } from './core/guards/auth';
 import { roleGuard } from './core/guards/role';
 
-const ADMIN          = ['ROLE_ADMIN'];
-const ADMIN_GERENTE  = ['ROLE_ADMIN', 'ROLE_GERENTE'];
-const ALL_ROLES      = ['ROLE_ADMIN', 'ROLE_GERENTE', 'ROLE_SUPERVISOR'];
+const ADMIN = ['ROLE_ADMIN'];
+const ADMIN_GERENTE = ['ROLE_ADMIN', 'ROLE_GERENTE'];
+const ALL_ROLES = ['ROLE_ADMIN', 'ROLE_GERENTE', 'ROLE_SUPERVISOR'];
 
 export const routes: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -43,7 +43,7 @@ export const routes: Routes = [
       },
       {
         path: 'sales',
-        canActivate: [roleGuard(ALL_ROLES)],  // ← GERENTE + SUPERVISOR
+        canActivate: [roleGuard(ALL_ROLES)], // ← GERENTE + SUPERVISOR
         loadComponent: () => import('./core/components/sale/sale').then((m) => m.SaleComponent),
       },
       {
@@ -63,11 +63,10 @@ export const routes: Routes = [
           import('./core/components/report/report').then((m) => m.ReportComponent),
       },
       {
-  path: 'users',
-  canActivate: [roleGuard(ADMIN_GERENTE)],
-  loadComponent: () =>
-    import('./core/components/User/User').then(m => m.UserComponent),
-},
+        path: 'users',
+        canActivate: [roleGuard(ADMIN_GERENTE)],
+        loadComponent: () => import('./core/components/User/User').then((m) => m.UserComponent),
+      },
     ],
   },
   { path: '**', redirectTo: 'dashboard' },
