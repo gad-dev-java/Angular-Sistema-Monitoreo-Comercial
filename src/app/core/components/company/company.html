@@ -1,194 +1,270 @@
 <!-- Toast -->
 @if (successMsg()) {
-  <div class="toast">
-    <div class="toast-icon">✓</div>
-    {{ successMsg() }}
-  </div>
+  <div class="toast">✓ {{ successMsg() }}</div>
 }
 
 <div class="company-page">
 
-  <!-- Header -->
+  <!-- HEADER -->
   <div class="page-header">
     <div>
       <div class="page-title">Empresas</div>
       <p class="page-sub">Gestiona las empresas del sistema</p>
     </div>
+
     <div class="header-actions">
+
       <div class="search-box">
         <span class="search-icon">🔍</span>
-        <input type="text" placeholder="Buscar empresa..."
+        <input
+          type="text"
+          placeholder="Buscar empresa..."
           [value]="searchTerm()"
-          (input)="searchTerm.set($any($event.target).value)" />
+          (input)="searchTerm.set($any($event.target).value)"
+        />
       </div>
-      <button class="btn-primary" (click)="openCreate()">+ Nueva Empresa</button>
+
+      <button class="btn-submit btn-small" (click)="openCreate()">
+        + Nueva Empresa
+      </button>
+
     </div>
   </div>
 
-  <!-- Content -->
+  <!-- CONTENT -->
   <div class="content-scroll">
 
-    <!-- Empty state -->
+    <!-- EMPTY STATE -->
     @if (companies().length === 0) {
       <div class="empty-state">
-        <div class="empty-art">🏢</div>
+        <div class="empty-icon">🏢</div>
         <h3>Sin empresas registradas</h3>
-        <p>Crea la primera empresa para comenzar a gestionar sus locales y objetivos comerciales.</p>
-        <button class="btn-primary btn-lg" (click)="openCreate()">+ Crear primera empresa</button>
+        <p>Crea la primera empresa para comenzar a gestionar sus locales.</p>
+        <button class="btn-submit" (click)="openCreate()">
+          + Crear primera empresa
+        </button>
       </div>
     }
 
-    <!-- Grid -->
+    <!-- GRID -->
     @if (companies().length > 0) {
+
       <div class="companies-grid">
+
         @for (company of companies(); track company.idCompany) {
-          <div class="company-card animate-slide-in">
-            <div class="card-glow"></div>
+
+          <div class="company-card">
 
             <div class="company-card-head">
-              <div class="company-avatar">{{ company.name.charAt(0).toUpperCase() }}</div>
+
+              <div class="company-avatar">
+                {{ company.name.charAt(0).toUpperCase() }}
+              </div>
+
               <div class="company-info">
                 <div class="company-name">{{ company.name }}</div>
-                <div class="company-id-tag">
-                  <span class="tag-label">RUC</span>
-                  <span class="tag-value">{{ company.ruc }}</span>
-                </div>
+                <div class="company-ruc">RUC: {{ company.ruc }}</div>
               </div>
-              <button class="btn-icon-only" (click)="openEdit(company)" title="Editar">✎</button>
+
+              <button
+                class="btn-icon"
+                (click)="openEdit(company)"
+                title="Editar"
+              >
+                ✎
+              </button>
+
             </div>
 
             <div class="company-card-footer">
-              <div class="status-indicator">
-                <div class="dot active"></div> Activa
+
+              <div class="status">
+                <span class="dot"></span> Activa
               </div>
-              <button class="btn-text-danger"
+
+              <button
+                class="btn-delete-text"
                 (click)="confirmDelete(company.idCompany)"
-                [disabled]="isDeleting() === company.idCompany">
-                {{ isDeleting() === company.idCompany ? 'Eliminando...' : '✕ Eliminar' }}
+                [disabled]="isDeleting() === company.idCompany"
+              >
+                {{ isDeleting() === company.idCompany ? 'Eliminando...' : 'Eliminar' }}
               </button>
+
             </div>
+
           </div>
+
         }
+
       </div>
+
     }
 
   </div>
+
 </div>
 
-<!-- ── Modal: Crear / Editar ── -->
+
+<!-- MODAL CREAR / EDITAR -->
 @if (showModal()) {
-  <div class="modal-backdrop" (click)="closeModal()">
-    <div class="modal animate-scale-in" (click)="$event.stopPropagation()">
 
-      <!-- Modal Header -->
-      <div class="modal-header">
-        <div style="display:flex; align-items:center; gap:1rem;">
-          <div class="modal-icon-hex">🏢</div>
-          <div>
-            <div style="font-family:'Syne',sans-serif; font-weight:800; font-size:1.15rem; color:#e2e8f0;">
-              {{ editingId() !== null ? 'Editar Empresa' : 'Nueva Empresa' }}
-            </div>
-            <div style="font-family:'DM Mono',monospace; font-size:.65rem; color:#7a8ba0; margin-top:.2rem;">
-              {{ editingId() !== null ? 'Actualiza los datos de la empresa' : 'Completa los datos para registrar' }}
-            </div>
-          </div>
-        </div>
-        <button class="modal-close-btn" (click)="closeModal()">✕</button>
+<div class="modal-backdrop" (click)="closeModal()">
+
+  <div class="modal" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+
+      <div class="modal-title">
+        {{ editingId() !== null ? 'Editar Empresa' : 'Nueva Empresa' }}
       </div>
 
-      <!-- Modal Body -->
-      <div style="padding: 1.75rem 2rem 2rem;">
+      <button class="modal-close" (click)="closeModal()">✕</button>
 
-        @if (errorMsg()) {
-          <div class="alert-error-premium">
-            <div class="alert-icon">!</div>
-            {{ errorMsg() }}
-          </div>
-        }
-
-        <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="premium-form">
-
-          <div class="form-section-label">Información de la empresa</div>
-
-          <!-- Nombre -->
-          <div class="field" style="margin-bottom: 1.25rem;">
-            <label style="display:block; font-family:'DM Mono',monospace; font-size:.68rem;
-              letter-spacing:.1em; text-transform:uppercase; color:#7a8ba0; margin-bottom:.5rem;">
-              Nombre de la empresa
-            </label>
-            <div class="input-group-premium">
-              <input type="text" formControlName="name"
-                placeholder="Ej: Retail Corp S.A.C."
-                [class.invalid]="isFieldInvalid('name')" />
-              <div class="input-focus-line"></div>
-            </div>
-            @if (isFieldInvalid('name')) {
-              <div class="field-error-msg">
-                @if (form.get('name')!.hasError('required')) { El nombre es requerido. }
-                @else if (form.get('name')!.hasError('minlength')) { Mínimo 2 caracteres. }
-              </div>
-            }
-          </div>
-
-          <!-- RUC -->
-          <div class="field" style="margin-bottom: 1.25rem;">
-            <label style="display:block; font-family:'DM Mono',monospace; font-size:.68rem;
-              letter-spacing:.1em; text-transform:uppercase; color:#7a8ba0; margin-bottom:.5rem;">
-              RUC
-            </label>
-            <div class="input-group-premium">
-              <input type="text" formControlName="ruc"
-                placeholder="20123456789"
-                [class.invalid]="isFieldInvalid('ruc')"
-                maxlength="11" />
-              <div class="input-focus-line"></div>
-            </div>
-            @if (isFieldInvalid('ruc')) {
-              <div class="field-error-msg">
-                @if (form.get('ruc')!.hasError('required')) { El RUC es requerido. }
-                @else if (form.get('ruc')!.hasError('pattern')) { Debe tener exactamente 11 dígitos numéricos. }
-              </div>
-            }
-          </div>
-
-          <!-- Footer -->
-          <div class="modal-footer-premium">
-            <button type="button" class="btn-cancel" (click)="closeModal()">Cancelar</button>
-            <button type="submit" class="btn-submit-premium" [disabled]="isSaving()">
-              @if (isSaving()) {
-                <div class="loader-dots">
-                  <span></span><span></span><span></span>
-                </div>
-              } @else {
-                {{ editingId() !== null ? 'Actualizar' : 'Crear empresa' }}
-              }
-            </button>
-          </div>
-
-        </form>
-      </div>
     </div>
+
+    <div class="modal-body">
+
+      @if (errorMsg()) {
+        <div class="form-error">
+          ⚠ {{ errorMsg() }}
+        </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+
+        <!-- Nombre -->
+        <div class="field">
+          <label class="field-label">Nombre de la empresa</label>
+
+          <input
+            class="field-input"
+            formControlName="name"
+            type="text"
+            placeholder="Ej: Retail Corp S.A.C."
+            [class.input-error]="isFieldInvalid('name')"
+          />
+
+          @if (isFieldInvalid('name')) {
+            <div class="field-error">
+              @if (form.get('name')!.hasError('required')) { El nombre es requerido }
+              @else if (form.get('name')!.hasError('minlength')) { Mínimo 2 caracteres }
+            </div>
+          }
+
+        </div>
+
+        <!-- RUC -->
+        <div class="field">
+
+          <label class="field-label">RUC</label>
+
+          <input
+            class="field-input"
+            formControlName="ruc"
+            type="text"
+            maxlength="11"
+            placeholder="20123456789"
+            [class.input-error]="isFieldInvalid('ruc')"
+          />
+
+          @if (isFieldInvalid('ruc')) {
+            <div class="field-error">
+
+              @if (form.get('ruc')!.hasError('required')) {
+                El RUC es requerido
+              }
+
+              @else if (form.get('ruc')!.hasError('pattern')) {
+                Debe tener 11 dígitos
+              }
+
+            </div>
+          }
+
+        </div>
+
+        <!-- FOOTER -->
+        <div class="modal-footer">
+
+          <button
+            type="button"
+            class="btn-ghost"
+            (click)="closeModal()"
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="submit"
+            class="btn-submit"
+            [disabled]="isSaving()"
+          >
+
+            @if (isSaving()) {
+
+              <div class="loader-dots">
+                <span></span><span></span><span></span>
+              </div>
+
+            } @else {
+
+              {{ editingId() !== null ? 'Actualizar' : 'Crear empresa' }}
+
+            }
+
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
   </div>
+
+</div>
+
 }
 
-<!-- ── Modal: Confirmar eliminación ── -->
+
+
+<!-- MODAL DELETE -->
 @if (showDeleteId() !== null) {
-  <div class="modal-backdrop" (click)="cancelDelete()">
-    <div class="modal modal-sm animate-scale-in" (click)="$event.stopPropagation()"
-      style="max-width:420px;">
-      <div class="confirm-delete-body">
-        <div class="warning-icon">⚠</div>
-        <h2>¿Eliminar empresa?</h2>
-        <p>Esta acción no se puede deshacer. Los locales y objetivos asociados también serán afectados.</p>
-        <div style="display:flex; gap:1rem; justify-content:center;">
-          <button class="btn-ghost" (click)="cancelDelete()">Cancelar</button>
-          <button class="btn-danger"
-            (click)="onDelete(showDeleteId()!)"
-            [disabled]="isDeleting() !== null">
-            {{ isDeleting() !== null ? 'Eliminando...' : 'Sí, eliminar' }}
-          </button>
-        </div>
+
+<div class="modal-backdrop" (click)="cancelDelete()">
+
+  <div class="modal modal-sm" (click)="$event.stopPropagation()">
+
+    <div class="delete-body">
+
+      <div class="delete-icon">⚠</div>
+
+      <h2>¿Eliminar empresa?</h2>
+
+      <p>Esta acción no se puede deshacer.</p>
+
+      <div class="delete-actions">
+
+        <button class="btn-ghost" (click)="cancelDelete()">
+          Cancelar
+        </button>
+
+        <button
+          class="btn-delete"
+          (click)="onDelete(showDeleteId()!)"
+          [disabled]="isDeleting() !== null"
+        >
+
+          {{ isDeleting() !== null ? 'Eliminando...' : 'Sí, eliminar' }}
+
+        </button>
+
       </div>
+
     </div>
+
   </div>
+
+</div>
+
 }
