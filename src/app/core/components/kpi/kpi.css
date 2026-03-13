@@ -125,3 +125,151 @@
 @keyframes pulse   { 0%,100% { opacity:.4; } 50% { opacity:.8; } }
 @keyframes fadeUp  { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
 .animate-in { animation:fadeUp .4s ease both; }
+
+
+/* =========================
+   EXECUTIVE PANEL (BI)
+========================= */
+
+.executive-panel{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:1rem;
+}
+
+.exec-card{
+  background:#161d2c;
+  border:1px solid #2a3448;
+  border-radius:10px;
+  padding:1rem 1.2rem;
+}
+
+.exec-title{
+  font-family:'DM Mono',monospace;
+  font-size:.65rem;
+  color:#7a8ba0;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+}
+
+.exec-value{
+  font-family:'Syne',sans-serif;
+  font-size:1.6rem;
+  font-weight:800;
+  margin-top:.3rem;
+}
+
+.exec-card.blue .exec-value{ color:#00d4ff; }
+.exec-card.green .exec-value{ color:#10b981; }
+.exec-card.red .exec-value{ color:#ef4444; }
+.exec-card.purple .exec-value{ color:#a78bfa; }
+
+
+/* =========================
+   DONUT KPI
+========================= */
+
+.kpi-chart{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:.5rem 0;
+}
+
+.donut-chart{
+  --percent:0;
+  width:120px;
+  height:120px;
+  border-radius:50%;
+
+  background:
+  conic-gradient(
+    #00d4ff calc(var(--percent) * 1%),
+    #1c2333 0
+  );
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+}
+
+.donut-chart::after{
+  content:"";
+  width:70%;
+  height:70%;
+  background:#161d2c;
+  border-radius:50%;
+  position:absolute;
+}
+
+.donut-center{
+  position:relative;
+  text-align:center;
+}
+
+.donut-value{
+  font-family:'Syne',sans-serif;
+  font-size:1.2rem;
+  font-weight:800;
+}
+
+.donut-text{
+  font-family:'DM Mono',monospace;
+  font-size:.6rem;
+  color:#7a8ba0;
+}
+
+
+/* =========================
+   COMPARISON BARS
+========================= */
+
+.comparison-bars{
+  display:flex;
+  flex-direction:column;
+  gap:.6rem;
+}
+
+.bar-row{
+  display:flex;
+  align-items:center;
+  gap:.6rem;
+}
+
+.bar-label{
+  font-family:'DM Mono',monospace;
+  font-size:.65rem;
+  width:22px;
+  color:#7a8ba0;
+}
+
+.bar-track{
+  flex:1;
+  height:8px;
+  background:#1c2333;
+  border-radius:4px;
+  overflow:hidden;
+}
+
+.bar-fill{
+  height:100%;
+  border-radius:4px;
+  transition:width .6s ease;
+}
+
+.bar-fill.pc{
+  background:linear-gradient(90deg,#00d4ff,#0099cc);
+}
+
+.bar-fill.pt{
+  background:linear-gradient(90deg,#7c3aed,#a78bfa);
+}
+
+.bar-value{
+  font-family:'DM Mono',monospace;
+  font-size:.65rem;
+  color:#7a8ba0;
+  width:45px;
+  text-align:right;
+}
